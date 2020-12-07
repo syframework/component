@@ -140,16 +140,16 @@ class Component {
 	 * @param string $defaultMethod
 	 */
 	protected function actionDispatch($actionName, $defaultMethod = null) {
-		$method = $this->request($actionName, $defaultMethod) . 'Action';
+		$method = $this->request($actionName, $defaultMethod);
 		if (is_null($method)) return;
+		$method .= 'Action';
 		if (!method_exists($this, $method)) $method = $defaultMethod . 'Action';
-		if (method_exists($this, $method)) {
-			$info = $this->getDebugTrace();
-			$info['type'] = 'Action call';
-			$message = 'Call method ' . $method;
-			$this->log($message, $info);
-			$this->$method();
-		}
+		if (!method_exists($this, $method)) return;
+		$info = $this->getDebugTrace();
+		$info['type'] = 'Action call';
+		$message = 'Call method ' . $method;
+		$this->log($message, $info);
+		$this->$method();
 	}
 
 	/**
