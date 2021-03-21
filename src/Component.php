@@ -198,7 +198,7 @@ class Component {
 	public function logTag($message, $tag, array $info = array()) {
 		$debugger = Debugger::getInstance();
 		if (!isset($info['type'])) $info['type'] = get_class($this);
-		$debugger->logTag($message, $info);
+		$debugger->logTag($message, $tag, $info);
 	}
 
 	/**
