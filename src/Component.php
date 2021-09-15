@@ -79,11 +79,11 @@ class Component {
 	 * Set a value of a variable
 	 *
 	 * @param string $var
-	 * @param string $value
+	 * @param mixed $value
 	 * @param bool $append
 	 */
 	public function setVar($var, $value, $append = false) {
-		$this->template->setVar($var, $value, $append);
+		$this->template->setVar($var, strval($value), $append);
 	}
 
 	/**
