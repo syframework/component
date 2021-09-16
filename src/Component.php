@@ -114,7 +114,7 @@ class Component {
 	 * @param boolean $append
 	 */
 	public function setComponent($where, Component $component, $append = false) {
-		$this->template->setVar($where, $component->__toString(), $append);
+		$this->setVar($where, $component, $append);
 	}
 
 	/**
