@@ -107,6 +107,33 @@ class Component {
 	}
 
 	/**
+	 * Set multiple blocks using a data array
+	 *
+	 * @param string $name Block name
+	 * @param array $data Array of associative array, example:
+	 * [
+	 *   ['k1' => '...', 'k2' => '...', 'k3' => '...'],
+	 *   ['k1' => '...', 'k2' => '...', 'k3' => '...'],
+	 *   ...
+	 * ]
+	 *
+	 * Slot names will be:
+	 * -Variables slots: {$name_K1}, {$name_K2}, {$name_K3}...
+	 * -Iteration counter: {$name_INDEX}
+	 * -Block name: {$name_BLOCK}
+	 * -Data count: {$name_COUNT}
+	 */
+	public function setBlocks($name, $data) {
+		$name = strtoupper($name);
+		$this->setVar($name . '_COUNT', count($data));
+		foreach ($data as $k => $d) {
+			$this->setVar($name . '_INDEX', $k + 1);
+			$this->setVars(array_combine(array_map(function ($v) use ($name) { return $name . '_' . strtoupper($v); }, array_keys($d)), $d));
+			$this->setBlock($name . '_BLOCK');
+		}
+	}
+
+	/**
 	 * Add a component
 	 *
 	 * @param string $where

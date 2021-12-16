@@ -86,6 +86,66 @@ Block not parsed
 <!-- END MY_BLOCK -->
 ```
 
+### Set blocks using a data array
+
+```php
+class A extends Sy\Component {
+
+	public function __construct() {
+		parent::__construct();
+
+		$this->setTemplateFile(__DIR__ . '/template.html');
+
+		// setBlocks will set a block for each line in the data array
+		$this->setBlocks('foo', [
+			['firstname' => 'John', 'lastname' => 'Doe', 'age' => 32],
+			['firstname' => 'John', 'lastname' => 'Wick', 'age' => 42],
+			['firstname' => 'Jane', 'lastname' => 'Doe', 'age' => 25],
+		]);
+	}
+
+}
+
+echo new A();
+```
+
+Template file, template.html:
+```html
+Nb persons: {FOO_COUNT}
+<!-- BEGIN FOO_BLOCK -->
+<div>
+	Index: {FOO_INDEX}
+	Firstname: {FOO_FIRSTNAME}
+	Lastname: {FOO_LASTNAME}
+	Age: {FOO_AGE}
+</div>
+<!-- END FOO_BLOCK -->
+```
+
+Output:
+```
+Nb persons: 3
+
+<div>
+        Index: 1
+        Firstname: John
+        Lastname: Doe
+        Age: 32
+</div>
+<div>
+        Index: 2
+        Firstname: John
+        Lastname: Wick
+        Age: 42
+</div>
+<div>
+        Index: 3
+        Firstname: Jane
+        Lastname: Doe
+        Age: 25
+</div>
+```
+
 ### Alternative template syntax
 
 It's possible to use simple PHP template syntax.
