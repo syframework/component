@@ -1,5 +1,4 @@
 <?php
-
 namespace Sy;
 
 use Sy\Template\TemplateProvider,
@@ -238,7 +237,7 @@ class Component {
 		$trace = debug_backtrace();
 		$i = 1;
 		if (!isset($trace[$i + 1])) $i--;
-		$res['class'] = isset($trace[$i + 1]['class']) ? $trace[$i + 1]['class'] : '';
+		$res['class']    = isset($trace[$i + 1]['class'])    ? $trace[$i + 1]['class']    : '';
 		$res['function'] = isset($trace[$i + 1]['function']) ? $trace[$i + 1]['function'] : '';
 		$res['file'] = $trace[$i]['file'];
 		$res['line'] = $trace[$i]['line'];
