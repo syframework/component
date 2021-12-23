@@ -101,6 +101,7 @@ class A extends Sy\Component {
 			['firstname' => 'John', 'lastname' => 'Doe', 'age' => 32],
 			['firstname' => 'John', 'lastname' => 'Wick', 'age' => 42],
 			['firstname' => 'Jane', 'lastname' => 'Doe', 'age' => 25],
+			['firstname' => 'Bob', 'lastname' => 'Doe'],
 		]);
 	}
 
@@ -117,7 +118,11 @@ Nb persons: {FOO_COUNT}
 	Index: {FOO_INDEX}
 	Firstname: {FOO_FIRSTNAME}
 	Lastname: {FOO_LASTNAME}
+	<!-- BEGIN FOO_AGE_BLOCK -->
 	Age: {FOO_AGE}
+	<!-- ELSE FOO_AGE_BLOCK -->
+	Unknown age
+	<!-- END FOO_AGE_BLOCK -->
 </div>
 <!-- END FOO_BLOCK -->
 ```
@@ -127,22 +132,28 @@ Output:
 Nb persons: 3
 
 <div>
-        Index: 1
-        Firstname: John
-        Lastname: Doe
-        Age: 32
+		Index: 1
+		Firstname: John
+		Lastname: Doe
+		Age: 32
 </div>
 <div>
-        Index: 2
-        Firstname: John
-        Lastname: Wick
-        Age: 42
+		Index: 2
+		Firstname: John
+		Lastname: Wick
+		Age: 42
 </div>
 <div>
-        Index: 3
-        Firstname: Jane
-        Lastname: Doe
-        Age: 25
+		Index: 3
+		Firstname: Jane
+		Lastname: Doe
+		Age: 25
+</div>
+<div>
+		Index: 4
+		Firstname: Bob
+		Lastname: Doe
+		Unknown age
 </div>
 ```
 

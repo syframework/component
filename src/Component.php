@@ -129,6 +129,9 @@ class Component {
 		foreach ($data as $k => $d) {
 			$this->setVar($name . '_INDEX', $k + 1);
 			$this->setVars(array_combine(array_map(function ($v) use ($name) { return $name . '_' . strtoupper($v); }, array_keys($d)), $d));
+			foreach ($d as $k => $v) {
+				if (!empty($v)) $this->setBlock($name . '_' . strtoupper($k) . '_BLOCK');
+			}
 			$this->setBlock($name . '_BLOCK');
 		}
 	}
