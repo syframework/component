@@ -172,7 +172,8 @@ class Component {
 	protected function actionDispatch($actionName, $defaultMethod = null) {
 		$method = $this->request($actionName, $defaultMethod);
 		if (is_null($method)) return;
-		$method .= 'Action';
+		$method = str_replace('-', '_', $method) . '_action';
+		if (!method_exists($this, $method)) $method = str_replace('_', '', ucwords($method, '_'));
 		if (!method_exists($this, $method)) $method = $defaultMethod . 'Action';
 		if (!method_exists($this, $method)) return;
 		$info = $this->getDebugTrace();
