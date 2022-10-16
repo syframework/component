@@ -1,23 +1,18 @@
 # sy/component
 
-The concept of **component** allows you to build an application as a tree of simpler components.
+The concept of **component** allows you to build an application as a tree of simpler components (Composite design pattern). And each component can be reusable.
 
-A component is a package of several elements:
-* classes
-* templates
-* resources (images, css, js etc...)
+Basically we can assume that a component is a stringable object. At this point, it just use a template to generate a string that can be in any format (html, xml, json, plain text etc...). On top of this, we can build web components by adding css and js properties.
 
-A component can be used alone or in another component.
-
-**Sy\Component** is the base class of all components.
+The class **Sy\Component** is the base class of other **web components** ([sy/webcomponent](https://github.com/syframework/webcomponent)) and **html page and elements** ([sy/html](https://github.com/syframework/html)) like form and table etc...
 
 ## Component template engine
 
 The template engine used is [sy/template](https://github.com/syframework/template)
 
-### Template syntax notion: var and block
+### Template syntax notion: **slot** and **block**
 
-Example with **setVar** method, your PHP script:
+Example with **setVar** method for filling a slot, your PHP script:
 ```php
 <?php
 
@@ -29,12 +24,12 @@ echo $c;
 ```
 
 Template file, template.tpl:
-```html
+```
 Hello {NAME}
 ```
 
 Output result:
-```html
+```
 Hello World
 ```
 
@@ -132,28 +127,28 @@ Output:
 Nb persons: 3
 
 <div>
-		Index: 1
-		Firstname: John
-		Lastname: Doe
-		Age: 32
+	Index: 1
+	Firstname: John
+	Lastname: Doe
+	Age: 32
 </div>
 <div>
-		Index: 2
-		Firstname: John
-		Lastname: Wick
-		Age: 42
+	Index: 2
+	Firstname: John
+	Lastname: Wick
+	Age: 42
 </div>
 <div>
-		Index: 3
-		Firstname: Jane
-		Lastname: Doe
-		Age: 25
+	Index: 3
+	Firstname: Jane
+	Lastname: Doe
+	Age: 25
 </div>
 <div>
-		Index: 4
-		Firstname: Bob
-		Lastname: Doe
-		Unknown age
+	Index: 4
+	Firstname: Bob
+	Lastname: Doe
+	Unknown age
 </div>
 ```
 
@@ -174,12 +169,12 @@ echo $c;
 ```
 
 PHP template file, template.tpl:
-```html
+```
 Hello <?php echo $NAME ?>
 ```
 
 Output result:
-```html
+```
 Hello World
 ```
 
@@ -196,7 +191,6 @@ use Sy\Component;
 class Hello extends Component {
 
 	public function  __construct($name = 'world') {
-		parent::__construct();
 		$this->setTemplateFile(__DIR__ . '/Hello.tpl');
 		$this->setVar('NAME', $name);
 	}
@@ -205,7 +199,7 @@ class Hello extends Component {
 ```
 
 Hello.tpl
-```html
+```
 Hello {NAME}!
 ```
 
@@ -225,14 +219,14 @@ echo $hello;
 
 ## Add a component in another one
 
-Use **setComponent** method to add a component in another one.
+Use **setVar** method to add a component in another one.
 
 ```php
 <?php
 
 $c = new Sy\Component();
 $c->setTemplateFile(__DIR__ . '/template.tpl');
-$c->setComponent('NAME', new Hello());
+$c->setVar('NAME', new Hello());
 ```
 
 ## Component actions
@@ -270,3 +264,171 @@ class MyComponent extends Component {
 
 }
 ```
+
+## Component translators
+
+Translator can be added in a Component.
+Each Translator will load translation data from a file in a specified directory.
+This translation file must be named as the detected language. For example, if the detected language is "fr",
+the PHP Translator will try to load "fr.php". And Gettext Translator will try to load "fr.mo".
+
+This feature is provided by the library [sy/translate](https://github.com/syframework/translate)
+
+### Language detection
+
+Language will be detected using these variables in this order:
+
+1. $_SESSION['sy_language']
+2. $_COOKIE['sy_language']
+3. $_SERVER['HTTP_ACCEPT_LANGUAGE']
+
+### Translation methods
+
+- void **Component::addTranslator**(string *$directory* [, string *$type* = 'php', string *$lang* = ''])
+- string **Component::_**(mixed *$values*)
+
+Exemple:
+```php
+<?php
+
+use Sy\Component;
+
+class MyComponent extends Component {
+
+	public function __construct() {
+		parent::__construct();
+		$this->setTemplateFile(__DIR__ . '/tpl/mycomponent.tpl');
+
+		// Add a translator, it will look for translation file into specified directory
+		$this->addTranslator(__DIR__ . '/lang', 'php', 'fr');
+
+		// Use translation method
+		$this->setVar('SLOT1', $this->_('Hello world'));
+		$this->setVar('SLOT2', $this->_('This is %s', 'an apple'));
+		$this->setVar('SLOT3', $this->_('This is %s', 'an pineapple'));
+		$this->setVar('SLOT4', $this->_('Number of %d max', 10));
+	}
+
+}
+
+echo new MyComponent();
+```
+
+PHP Translation file:
+```php
+<?php
+return array(
+	'Hello world' => 'Bonjour monde',
+	'This is %s' => 'Ceci est %s',
+	'an apple' => 'une pomme',
+	'a pineapple' => 'un ananas',
+	'Number of %d max' => 'Nombre de %d max',
+);
+```
+
+Template file:
+```
+{"Hello world"}
+
+{"No traduction"}
+
+{SLOT1}
+{SLOT2}
+{SLOT3}
+{SLOT4}
+```
+
+Output result:
+```
+Bonjour monde
+
+No traduction
+
+Bonjour monde
+Ceci est une pomme
+Ceci est an pineapple
+Nombre de 10 max
+```
+
+### Add multiple translators
+
+It's possible to add multiple translators in a component. The order of addition is important because the translate process will stop right after the first translation data found.
+
+### Translators transmission to inner web component
+
+When adding a web component B in a web component A, all the translators of A will be added into B.
+
+```php
+<?php
+
+use Sy\Component;
+
+class A extends Component {
+
+	public function __construct() {
+		$this->mount(function () {
+			$this->addTranslator(__DIR__ . '/lang', 'php', 'fr');
+			$this->setTemplateContent('<a>{HELLO/} {"world"} {B}</a>');
+			$this->setVars([
+				'HELLO' => $this->_('hello'),
+				'B' => new B()
+			]);
+		});
+	}
+
+}
+
+class B extends Component {
+
+	public function __construct() {
+		$this->mount(function () {
+			$this->setTemplateContent('<b>{HELLO/} {"world"} {C}</b>');
+			$this->setVars([
+				'HELLO' => $this->_('hello'),
+				'C' => new C()
+			]);
+		});
+	}
+
+}
+
+class C extends Component {
+
+	public function __construct() {
+		$this->mount(function () {
+			$this->addTranslator(__DIR__ . '/lang/alt', 'php', 'fr');
+			$this->setTemplateContent('<c>{HELLO/} {"world"}</c>');
+			$this->setVars([
+				'HELLO' => $this->_('hello'),
+			]);
+		});
+	}
+
+}
+
+echo new A();
+```
+
+Translation file added in component A:
+```php
+return array(
+	'hello' => 'bonjour',
+	'world' => 'monde',
+);
+```
+
+Translation file added in component C:
+```php
+return array(
+	'hello' => 'salut',
+);
+```
+
+Output result:
+```
+<a>bonjour monde <b>bonjour monde <c>salut monde</c></b></a>
+```
+
+The translator of A is transmitted to B and C. C will use his own translator in priority.
+
+We need to use the **mount** method here to register callbacks on the mount event triggered just before the rendering stage. This is because we need to ensure that all the leaf components received the translators from their parents components.
