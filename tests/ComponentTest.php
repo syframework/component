@@ -118,6 +118,24 @@ class MyTestComponent extends Component {
 		$this->setBlock('BLOCK', ['SLOT' => $c]);
 	}
 
+	public function append_component() {
+		$this->setTemplateContent('{SLOT}');
+
+		$a = new Component();
+		$a->setTemplateContent('<a>I am A</a>');
+		$b = new Component();
+		$b->setTemplateContent('<b>I am B</b>');
+		$c = new Component();
+		$c->setTemplateContent('<c>I am C</c>');
+
+		$this->setVar('SLOT', $a);
+		$this->setVar('SLOT', 'foo', true);
+		$this->setVar('SLOT', $b, true);
+		$this->setVar('SLOT', 'bar', true);
+		$this->setVar('SLOT', $c, true);
+		$this->setVar('SLOT', 'baz', true);
+	}
+
 }
 
 function minify($code) {
@@ -157,6 +175,12 @@ class ComponentTest extends TestCase {
 			$c = new MyTestComponent($id);
 			$this->assertFileContentEqualsComponentRender(__DIR__ . "/result/$id.txt", $c);
 		}
+	}
+
+	public function testAppendComponent() {
+		$id = 'append_component';
+		$c = new MyTestComponent($id);
+		$this->assertFileContentEqualsComponentRender(__DIR__ . "/result/$id.txt", $c);
 	}
 
 }
