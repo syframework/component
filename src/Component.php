@@ -3,6 +3,7 @@ namespace Sy;
 
 use Sy\Template\TemplateProvider,
 	Sy\Template\TemplateFileNotFoundException,
+	Sy\Translate\TranslatorProvider,
 	Sy\Debug\Debugger;
 
 class Component {
@@ -10,7 +11,7 @@ class Component {
 	/**
 	 * Template engine
 	 *
-	 * @var ITemplate
+	 * @var \Sy\Template\ITemplate
 	 */
 	private $template;
 
@@ -19,11 +20,57 @@ class Component {
 	 *
 	 * @var string
 	 */
-	private $templateType;
+	private $templateType = '';
 
-	public function __construct() {
-		$this->templateType = '';
-		$this->template = TemplateProvider::createTemplate();
+	/**
+	 * Translators
+	 *
+	 * @var \Sy\Translate\ITranslator[] Array of translators
+	 */
+	private $translators = array();
+
+	/**
+	 * @var array
+	 */
+	private $vars = array();
+
+	/**
+	 * @var array
+	 */
+	private $blocks = array();
+
+	/**
+	 * @var string
+	 */
+	private $render;
+
+	/**
+	 * @var callable[] Callbacks invoked on mount event
+	 */
+	private $mount = array();
+
+	/**
+	 * @var callable[] Callbacks invoked on mounted event
+	 */
+	private $mounted = array();
+
+	/**
+	 * Parent component
+	 *
+	 * @var Component|null
+	 */
+	private $parent = null;
+
+	public function __construct() {}
+
+	/**
+	 * @return \Sy\Template\ITemplate
+	 */
+	private function getTemplate() {
+		if (!isset($this->template)) {
+			$this->template = TemplateProvider::createTemplate($this->getTemplateType());
+		}
+		return $this->template;
 	}
 
 	/**
@@ -55,7 +102,7 @@ class Component {
 	public function setTemplateFile($file, $type = '') {
 		$this->setTemplateType($type);
 		try {
-			$this->template->setFile($file);
+			$this->getTemplate()->setFile($file);
 		} catch (TemplateFileNotFoundException $e) {
 			$this->setTemplateContent('');
 			$info = $this->getDebugTrace();
@@ -72,18 +119,51 @@ class Component {
 	 */
 	public function setTemplateContent($content, $type = '') {
 		$this->setTemplateType($type);
-		$this->template->setContent($content);
+		$this->getTemplate()->setContent($content);
+	}
+
+	/**
+	 * Return the parent component
+	 *
+	 * @return Component
+	 */
+	public function getParent() {
+		return $this->parent;
+	}
+
+	/**
+	 * Set the component parent component
+	 *
+	 * @param Component $component
+	 */
+	public function setParent(Component $component) {
+		$this->parent = $component;
 	}
 
 	/**
 	 * Set a value of a variable
 	 *
 	 * @param string $var
-	 * @param mixed $value
+	 * @param string|Component $value
 	 * @param bool $append
 	 */
 	public function setVar($var, $value, $append = false) {
-		$this->template->setVar($var, strval($value), $append);
+		if ($value instanceof Component) {
+			$value->addTranslators($this->getTranslators());
+			$component = ($append and !empty($this->vars[$var])) ? static::concat($this->vars[$var], $value) : $value;
+			$component->setParent($this);
+			$this->vars[$var] = $component;
+			return;
+		}
+		if ($append and !empty($this->vars[$var])) {
+			if ($this->vars[$var] instanceof Component) {
+				$value = static::concat($this->vars[$var], $value);
+				$value->setParent($this);
+			} else {
+				$value = $this->vars[$var] . $value;
+			}
+		}
+		$this->vars[$var] = $value;
 	}
 
 	/**
@@ -98,12 +178,13 @@ class Component {
 	}
 
 	/**
-	 * Parse a block
+	 * Set a block
 	 *
-	 * @param string $block
+	 * @param string $block Block name
+	 * @param array $vars Block variables, if empty use variables set in the component
 	 */
-	public function setBlock($block) {
-		$this->template->setBlock($block);
+	public function setBlock($block, array $vars = array()) {
+		$this->blocks[][$block] = empty($vars) ? $this->vars : $vars;
 	}
 
 	/**
@@ -123,16 +204,16 @@ class Component {
 	 * -Block name: {$name_BLOCK}
 	 * -Data count: {$name_COUNT}
 	 */
-	public function setBlocks($name, $data) {
+	public function setBlocks($name, array $data) {
 		$name = strtoupper($name);
 		$this->setVar($name . '_COUNT', count($data));
-		foreach ($data as $k => $d) {
-			$this->setVar($name . '_INDEX', $k + 1);
-			$this->setVars(array_combine(array_map(function ($v) use ($name) { return $name . '_' . strtoupper($v); }, array_keys($d)), $d));
-			foreach ($d as $k => $v) {
-				if (!empty($v)) $this->setBlock($name . '_' . strtoupper($k) . '_BLOCK');
+		foreach ($data as $i => $row) {
+			$vars = array_combine(array_map(function ($v) use ($name) { return $name . '_' . strtoupper($v); }, array_keys($row)), $row);
+			$vars[$name . '_INDEX'] = $i + 1;
+			foreach ($row as $k => $v) {
+				if (!empty($v)) $this->setBlock($name . '_' . strtoupper($k) . '_BLOCK', array($name . '_' . strtoupper($k) => $v));
 			}
-			$this->setBlock($name . '_BLOCK');
+			$this->setBlock($name . '_BLOCK', $vars);
 		}
 	}
 
@@ -148,19 +229,152 @@ class Component {
 	}
 
 	/**
+	 * Add a Translator
+	 *
+	 * @param string $directory Translator directory
+	 * @param string $type Translator type
+	 * @param string $lang Translation language. Use auto detection by default
+	 */
+	public function addTranslator($directory, $type = 'php', $lang = '') {
+		array_unshift($this->translators, TranslatorProvider::createTranslator($directory, $type, $lang));
+	}
+
+	/**
+	 * @param \Sy\Translate\ITranslator[] $translators Array of ITranslator
+	 */
+	public function addTranslators(array $translators) {
+		$this->translators = array_merge($this->translators, $translators);
+	}
+
+	/**
+	 * @return \Sy\Translate\ITranslator[] Array of ITranslator
+	 */
+	public function getTranslators() {
+		return $this->translators;
+	}
+
+	/**
+	 * @param \Sy\Translate\ITranslator[] $translators Array of ITranslator
+	 */
+	public function setTranslators(array $translators) {
+		$this->translators = $translators;
+	}
+
+	/**
+	 * Translate message
+	 *
+	 * @param mixed $values The first argument can be a sprintf format string and others arguments will be used as sprintf values
+	 * @return string
+	 */
+	public function _(...$values) {
+		// Can also accept a single array as argument
+		if (count($values) === 1 and is_array($values[0])) $values = $values[0];
+
+		$message = array_shift($values);
+
+		foreach ($this->translators as $translator) {
+			$res = $translator->translate($message);
+			if (!empty($res)) break;
+		}
+
+		array_walk($values, function(&$value) {
+			foreach ($this->translators as $translator) {
+				$a = $translator->translate($value);
+				if (!empty($a)) {
+					$value = $a;
+					break;
+				}
+			}
+		});
+
+		if (empty($res)) $res = $message;
+
+		return empty($values) ? $res : sprintf($res, ...$values);
+	}
+
+	/**
+	 * Add a callback on mount event
+	 *
+	 * @param callable $callback
+	 */
+	public function mount(callable $callback) {
+		$this->mount[] = $callback;
+	}
+
+	/**
+	 * Add a callback on mounted event
+	 *
+	 * @param callable $callback
+	 */
+	public function mounted(callable $callback) {
+		$this->mounted[] = $callback;
+	}
+
+	/**
 	 * Return the render of the component
 	 *
 	 * @return string
 	 */
 	public function __toString() {
-		return $this->template->getRender();
+		if (isset($this->render)) return $this->render;
+		return $this->render();
 	}
 
 	/**
-	 * Render the component
+	 * Return the component render
 	 */
 	public function render() {
-		echo $this->__toString();
+		if (isset($this->render)) return $this->render;
+
+		// Mount event
+		foreach ($this->mount as $mount) {
+			$mount();
+		}
+
+		// Render sub components first
+		foreach ($this->vars as $v) {
+			if ($v instanceof Component) strval($v);
+		}
+		foreach ($this->blocks as $b) {
+			foreach (current($b) as $v) {
+				if ($v instanceof Component) strval($v);
+			}
+		}
+
+		// Mounted event
+		foreach ($this->mounted as $mounted) {
+			$mounted();
+		}
+
+		// Render the current component
+		foreach ($this->translators as $translator) {
+			foreach ($translator->getTranslationData() as $k => $v) {
+				$this->getTemplate()->setVar($k, $v);
+			}
+		}
+		foreach ($this->vars as $k => $v) {
+			$this->getTemplate()->setVar($k, $v);
+		}
+		foreach ($this->blocks as $b) {
+			$this->getTemplate()->setBlock(key($b), current($b));
+		}
+		$this->render = $this->getTemplate()->getRender();
+		return $this->render;
+	}
+
+	/**
+	 * Concat components
+	 *
+	 * @param string|Component ...$elements
+	 * @return Component
+	 */
+	public static function concat(...$elements) {
+		$component = new Component();
+		$component->setTemplateContent('{' . implode('}{', array_keys($elements)) . '}');
+		foreach ($elements as $i => $element) {
+			$component->setVar($i, $element);
+		}
+		return $component;
 	}
 
 	/**
