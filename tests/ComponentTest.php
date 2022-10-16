@@ -138,17 +138,16 @@ class MyTestComponent extends Component {
 
 }
 
-function minify($code) {
-	$search = array("\t", "\r", "\n");
-	$code = str_replace($search, ' ', $code);
-	$code = preg_replace('/\s+/', ' ', $code);
-	return trim($code);
-}
-
 class ComponentTest extends TestCase {
 
 	public function assertFileContentEqualsComponentRender(string $filename, Component $component) {
-		$this->assertEquals(minify(file_get_contents($filename)), minify($component->render()));
+		$minify = function ($code) {
+			$search = array("\t", "\r", "\n");
+			$code = str_replace($search, ' ', $code);
+			$code = preg_replace('/\s+/', ' ', $code);
+			return trim($code);
+		};
+		$this->assertEquals($minify(file_get_contents($filename)), $minify($component->render()));
 	}
 
 	public function testSetBlock() {
