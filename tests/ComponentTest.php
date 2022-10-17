@@ -182,4 +182,15 @@ class ComponentTest extends TestCase {
 		$this->assertFileContentEqualsComponentRender(__DIR__ . "/result/$id.txt", $c);
 	}
 
+	public function testSetBlockWithVars() {
+		$c = new Component();
+		$c->setTemplateContent('<!-- BEGIN A -->{SLOT}<!-- END A -->');
+		$c->setVar('SLOT', 'Hello');
+		foreach (['Foo', 'Bar', 'Baz'] as $v) {
+			$c->setBlock('A', ['SLOT' => $v]);
+		}
+		$c->setBlock('A');
+		$this->assertEquals('FooBarBazHello', $c->render());
+	}
+
 }

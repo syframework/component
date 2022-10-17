@@ -332,12 +332,12 @@ class Component {
 		}
 
 		// Render sub components first
-		foreach ($this->vars as $v) {
-			if ($v instanceof Component) strval($v);
+		foreach ($this->vars as $k => $v) {
+			if ($v instanceof Component) $this->vars[$k] = strval($v);
 		}
-		foreach ($this->blocks as $b) {
-			foreach (current($b) as $v) {
-				if ($v instanceof Component) strval($v);
+		foreach ($this->blocks as $i => $b) {
+			foreach (current($b) as $k => $v) {
+				if ($v instanceof Component) $this->blocks[$i][key($b)][$k] = strval($v);
 			}
 		}
 
