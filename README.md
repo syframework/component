@@ -71,7 +71,7 @@ Block 9
 
 ### ELSE block
 
-When a block is never parsed, you can use the ELSE block to show a default content.
+When a block is not set, you can use the ELSE block to show a default content.
 
 ```html
 <!-- BEGIN MY_BLOCK -->
@@ -79,6 +79,33 @@ Block content
 <!-- ELSE MY_BLOCK -->
 Block not parsed
 <!-- END MY_BLOCK -->
+```
+
+### Set block with isolated vars
+
+By default, when the second parameter of setBlock method is empty, it will use vars globally set for setting slots in the block scope.
+It is possible to use isolated vars for setting slots on the block scope with the second parameter.
+
+```php
+<?php
+
+$c = new Sy\Component();
+$c->setTemplateContent('<!-- BEGIN A -->{SLOT}<!-- END A -->');
+
+$c->setVar('SLOT', 'Hello');
+
+foreach (['Foo', 'Bar', 'Baz'] as $v) {
+	$c->setBlock('A', ['SLOT' => $v]);
+}
+
+$c->setBlock('A');
+
+echo $c;
+```
+
+Result:
+```
+FooBarBazHello
 ```
 
 ### Set blocks using a data array

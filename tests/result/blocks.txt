@@ -1,33 +1,25 @@
 Nb persons: 4
-
 <div>
 	Index: 1
 	Firstname: John
 	Lastname: Doe
-
 	Age: 32
-
 </div>
 <div>
 	Index: 2
 	Firstname: John
 	Lastname: Wick
-
 	Age: 42
-
 </div>
 <div>
 	Index: 3
 	Firstname: Bob
 	Lastname: Doe
 	Age: N/A
-
 </div>
 <div>
 	Index: 4
 	Firstname: Jane
 	Lastname: Doe
-
 	Age: 25
-
 </div>

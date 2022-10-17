@@ -1,62 +1,49 @@
-
 <a id="A 0">
-
 	<b id="B 0 0">
-
 		<c id="C 0 0 0" />
 		<c id="C 0 0 1" />
 		<c id="C 0 0 2" />
 	</b>
 	<b id="B 0 1">
-
 		<c id="C 0 1 0" />
 		<c id="C 0 1 1" />
 		<c id="C 0 1 2" />
 	</b>
 	<b id="B 0 2">
-
 		<c id="C 0 2 0" />
 		<c id="C 0 2 1" />
 		<c id="C 0 2 2" />
 	</b>
 </a>
 <a id="A 1">
-
 	<b id="B 1 0">
-
 		<c id="C 1 0 0" />
 		<c id="C 1 0 1" />
 		<c id="C 1 0 2" />
 	</b>
 	<b id="B 1 1">
-
 		<c id="C 1 1 0" />
 		<c id="C 1 1 1" />
 		<c id="C 1 1 2" />
 	</b>
 	<b id="B 1 2">
-
 		<c id="C 1 2 0" />
 		<c id="C 1 2 1" />
 		<c id="C 1 2 2" />
 	</b>
 </a>
 <a id="A 2">
-
 	<b id="B 2 0">
-
 		<c id="C 2 0 0" />
 		<c id="C 2 0 1" />
 		<c id="C 2 0 2" />
 	</b>
 	<b id="B 2 1">
-
 		<c id="C 2 1 0" />
 		<c id="C 2 1 1" />
 		<c id="C 2 1 2" />
 	</b>
 	<b id="B 2 2">
-
 		<c id="C 2 2 0" />
 		<c id="C 2 2 1" />
 		<c id="C 2 2 2" />

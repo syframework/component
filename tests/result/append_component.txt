@@ -1,0 +1,1 @@
+<a>I am A</a>foo<b>I am B</b>bar<c>I am C</c>baz
