@@ -184,6 +184,9 @@ class Component {
 	 * @param array $vars Block variables, if empty use variables set in the component
 	 */
 	public function setBlock($block, array $vars = array()) {
+		foreach ($vars as $k => $v) {
+			if ($v instanceof Component) $v->setParent($this);
+		}
 		$this->blocks[][$block] = empty($vars) ? $this->vars : $vars;
 	}
 
