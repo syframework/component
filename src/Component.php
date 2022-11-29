@@ -45,6 +45,11 @@ class Component {
 	private $render;
 
 	/**
+	 * @var callable[]|true Callbacks invoked on added event, set to true when the component is added on the component tree
+	 */
+	private $added = array();
+
+	/**
 	 * @var callable[] Callbacks invoked on mount event
 	 */
 	private $mount = array();
@@ -64,13 +69,18 @@ class Component {
 	public function __construct() {}
 
 	/**
-	 * @return \Sy\Template\ITemplate
+	 * Concat components
+	 *
+	 * @param  string|Component ...$elements
+	 * @return Component
 	 */
-	private function getTemplate() {
-		if (!isset($this->template)) {
-			$this->template = TemplateProvider::createTemplate($this->getTemplateType());
+	public static function concat(...$elements) {
+		$component = new Component();
+		$component->setTemplateContent('{' . implode('}{', array_keys($elements)) . '}');
+		foreach ($elements as $i => $element) {
+			$component->setVar($i, $element);
 		}
-		return $this->template;
+		return $component;
 	}
 
 	/**
@@ -138,6 +148,12 @@ class Component {
 	 */
 	public function setParent(Component $component) {
 		$this->parent = $component;
+		// Added event
+		if ($this->added === true) return;
+		foreach ($this->added as $added) {
+			$added();
+		}
+		$this->added = true;
 	}
 
 	/**
@@ -211,7 +227,9 @@ class Component {
 		$name = strtoupper($name);
 		$this->setVar($name . '_COUNT', count($data));
 		foreach ($data as $i => $row) {
-			$vars = array_combine(array_map(function ($v) use ($name) { return $name . '_' . strtoupper($v); }, array_keys($row)), $row);
+			$vars = array_combine(array_map(function ($v) use ($name) {
+				return $name . '_' . strtoupper($v);
+			}, array_keys($row)), $row);
 			$vars[$name . '_INDEX'] = $i + 1;
 			foreach ($row as $k => $v) {
 				if (!empty($v)) $this->setBlock($name . '_' . strtoupper($k) . '_BLOCK', array($name . '_' . strtoupper($k) => $v));
@@ -264,35 +282,13 @@ class Component {
 	}
 
 	/**
-	 * Translate message
+	 * Add a callback on added event
 	 *
-	 * @param mixed $values The first argument can be a sprintf format string and others arguments will be used as sprintf values
-	 * @return string
+	 * @param callable $callback
 	 */
-	public function _(...$values) {
-		// Can also accept a single array as argument
-		if (count($values) === 1 and is_array($values[0])) $values = $values[0];
-
-		$message = array_shift($values);
-
-		foreach ($this->translators as $translator) {
-			$res = $translator->translate($message);
-			if (!empty($res)) break;
-		}
-
-		array_walk($values, function(&$value) {
-			foreach ($this->translators as $translator) {
-				$a = $translator->translate($value);
-				if (!empty($a)) {
-					$value = $a;
-					break;
-				}
-			}
-		});
-
-		if (empty($res)) $res = $message;
-
-		return empty($values) ? $res : sprintf($res, ...$values);
+	public function added(callable $callback) {
+		if ($this->added === true) return;
+		$this->added[] = $callback;
 	}
 
 	/**
@@ -314,20 +310,18 @@ class Component {
 	}
 
 	/**
-	 * Return the render of the component
-	 *
-	 * @return string
-	 */
-	public function __toString() {
-		if (isset($this->render)) return $this->render;
-		return $this->render();
-	}
-
-	/**
 	 * Return the component render
 	 */
 	public function render() {
 		if (isset($this->render)) return $this->render;
+
+		// Added event
+		if ($this->added !== true) {
+			foreach ($this->added as $added) {
+				$added();
+			}
+			$this->added = true;
+		}
 
 		// Mount event
 		foreach ($this->mount as $mount) {
@@ -366,18 +360,35 @@ class Component {
 	}
 
 	/**
-	 * Concat components
+	 * Translate message
 	 *
-	 * @param string|Component ...$elements
-	 * @return Component
+	 * @param  mixed $values The first argument can be a sprintf format string and others arguments will be used as sprintf values
+	 * @return string
 	 */
-	public static function concat(...$elements) {
-		$component = new Component();
-		$component->setTemplateContent('{' . implode('}{', array_keys($elements)) . '}');
-		foreach ($elements as $i => $element) {
-			$component->setVar($i, $element);
+	protected function _(...$values) {
+		// Can also accept a single array as argument
+		if (count($values) === 1 and is_array($values[0])) $values = $values[0];
+
+		$message = array_shift($values);
+
+		foreach ($this->translators as $translator) {
+			$res = $translator->translate($message);
+			if (!empty($res)) break;
 		}
-		return $component;
+
+		array_walk($values, function(&$value) {
+			foreach ($this->translators as $translator) {
+				$a = $translator->translate($value);
+				if (!empty($a)) {
+					$value = $a;
+					break;
+				}
+			}
+		});
+
+		if (empty($res)) $res = $message;
+
+		return empty($values) ? $res : sprintf($res, ...$values);
 	}
 
 	/**
@@ -406,7 +417,7 @@ class Component {
 	 * @param string|array $message
 	 * @param array info Optionnal associative array. Key available: level, type, file, line, function, class, tag
 	 */
-	public function log($message, array $info = array()) {
+	protected function log($message, array $info = array()) {
 		$debugger = Debugger::getInstance();
 		if (!isset($info['type'])) $info['type'] = get_class($this);
 		$debugger->log($message, $info);
@@ -418,7 +429,7 @@ class Component {
 	 * @param string|array $message
 	 * @param array $info Optionnal associative array. Key available: type, file, line, function, class, tag
 	 */
-	public function logWarning($message, array $info = array()) {
+	protected function logWarning($message, array $info = array()) {
 		$debugger = Debugger::getInstance();
 		if (!isset($info['type'])) $info['type'] = get_class($this);
 		$debugger->logWarning($message, $info);
@@ -430,7 +441,7 @@ class Component {
 	 * @param string|array $message
 	 * @param array $info Optionnal associative array. Key available: type, file, line, function, class, tag
 	 */
-	public function logError($message, array $info = array()) {
+	protected function logError($message, array $info = array()) {
 		$debugger = Debugger::getInstance();
 		if (!isset($info['type'])) $info['type'] = get_class($this);
 		$debugger->logError($message, $info);
@@ -443,7 +454,7 @@ class Component {
 	 * @param string $tag
 	 * @param array $info Optionnal associative array. Key available: type, file, line, function, class, message, tag
 	 */
-	public function logTag($message, $tag, array $info = array()) {
+	protected function logTag($message, $tag, array $info = array()) {
 		$debugger = Debugger::getInstance();
 		if (!isset($info['type'])) $info['type'] = get_class($this);
 		$debugger->logTag($message, $tag, $info);
@@ -454,7 +465,7 @@ class Component {
 	 *
 	 * @return array
 	 */
-	public function getDebugTrace() {
+	protected function getDebugTrace() {
 		$trace = debug_backtrace();
 		$i = 1;
 		if (!isset($trace[$i + 1])) $i--;
@@ -470,7 +481,7 @@ class Component {
 	 *
 	 * @param string $id time record identifier
 	 */
-	public function timeStart($id) {
+	protected function timeStart($id) {
 		$debugger = Debugger::getInstance();
 		$debugger->timeStart($id);
 	}
@@ -480,7 +491,7 @@ class Component {
 	 *
 	 * @param string $id time record identifier
 	 */
-	public function timeStop($id) {
+	protected function timeStop($id) {
 		$debugger = Debugger::getInstance();
 		$debugger->timeStop($id);
 	}
@@ -489,8 +500,8 @@ class Component {
 	 * Return the GET parameter named $param
 	 * If the parameter is not set, return the default value
 	 *
-	 * @param string $param GET parameter name
-	 * @param mixed $default The default value
+	 * @param  string $param GET parameter name
+	 * @param  mixed $default The default value
 	 * @return mixed
 	 */
 	protected function get($param, $default = null) {
@@ -501,8 +512,8 @@ class Component {
 	 * Return the POST parameter named $param
 	 * If the parameter is not set, return the default value
 	 *
-	 * @param string $param POST parameter name
-	 * @param mixed $default The default value
+	 * @param  string $param POST parameter name
+	 * @param  mixed $default The default value
 	 * @return mixed
 	 */
 	protected function post($param, $default = null) {
@@ -513,8 +524,8 @@ class Component {
 	 * Return the COOKIE parameter named $param
 	 * If the parameter is not set, return the default value
 	 *
-	 * @param string $param COOKIE parameter name
-	 * @param mixed $default The default value
+	 * @param  string $param COOKIE parameter name
+	 * @param  mixed $default The default value
 	 * @return mixed
 	 */
 	protected function cookie($param, $default = null) {
@@ -525,8 +536,8 @@ class Component {
 	 * Return the REQUEST parameter named $param
 	 * If the parameter is not set, return the default value
 	 *
-	 * @param string $param REQUEST parameter name
-	 * @param mixed $default The default value
+	 * @param  string $param REQUEST parameter name
+	 * @param  mixed $default The default value
 	 * @return mixed
 	 */
 	protected function request($param, $default = null) {
@@ -537,8 +548,8 @@ class Component {
 	 * Return the SESSION parameter named $param
 	 * If the parameter is not set, return the default value
 	 *
-	 * @param string $param SESSION parameter name
-	 * @param mixed $default The default value
+	 * @param  string $param SESSION parameter name
+	 * @param  mixed $default The default value
 	 * @return mixed
 	 */
 	protected function session($param, $default = null) {
@@ -552,6 +563,26 @@ class Component {
 	 */
 	protected function redirect($location) {
 		return Http::redirect($location);
+	}
+
+	/**
+	 * @return \Sy\Template\ITemplate
+	 */
+	private function getTemplate() {
+		if (!isset($this->template)) {
+			$this->template = TemplateProvider::createTemplate($this->getTemplateType());
+		}
+		return $this->template;
+	}
+
+	/**
+	 * Return the render of the component
+	 *
+	 * @return string
+	 */
+	public function __toString() {
+		if (isset($this->render)) return $this->render;
+		return $this->render();
 	}
 
 }
