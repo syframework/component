@@ -170,7 +170,7 @@ class A3 extends Component {
 			$this->setTemplateContent('<a>{HELLO/} {"world"} {B}</a>');
 			$this->setVars([
 				'HELLO' => $this->_('hello'),
-				'B' => new B3()
+				'B' => new B3(),
 			]);
 		});
 	}
@@ -184,7 +184,7 @@ class B3 extends Component {
 			$this->setTemplateContent('<b>{HELLO/} {"world"} {C}</b>');
 			$this->setVars([
 				'HELLO' => $this->_('hello'),
-				'C' => new C3()
+				'C' => new C3(),
 			]);
 		});
 	}
@@ -226,38 +226,48 @@ class MyComponent extends Component {
 
 class TranslatorTest extends TestCase {
 
+	protected static function getMethod(string $name) {
+		$class = new ReflectionClass('\Sy\Component');
+		$method = $class->getMethod($name);
+		$method->setAccessible(true);
+		return $method;
+	}
+
 	public function testTranslate() {
 		$a = new Component();
 		$a->addTranslator(__DIR__ . '/lang', 'php', 'fr');
-		$this->assertEquals($a->_('Hello world'), 'Bonjour monde');
-		$this->assertEquals($a->_('This is %s', 'an apple'), 'Ceci est une pomme');
-		$this->assertEquals($a->_('This is %s'), 'Ceci est %s');
-		$this->assertEquals($a->_('Number of %d max', 10), 'Nombre de 10 max');
-		$this->assertEquals(sprintf($a->_('Number of %d max'), 10), 'Nombre de 10 max');
+		$translate = self::getMethod('_');
+		$this->assertEquals($translate->invokeArgs($a, ['Hello world']), 'Bonjour monde');
+		$this->assertEquals($translate->invokeArgs($a, ['This is %s', 'an apple']), 'Ceci est une pomme');
+		$this->assertEquals($translate->invokeArgs($a, ['This is %s']), 'Ceci est %s');
+		$this->assertEquals($translate->invokeArgs($a, ['Number of %d max', 10]), 'Nombre de 10 max');
+		$this->assertEquals(sprintf($translate->invokeArgs($a, ['Number of %d max']), 10), 'Nombre de 10 max');
 	}
 
 	public function testMultiTranslatorsOrder1() {
 		$a = new Component();
 		$a->addTranslator(__DIR__ . '/lang/alt', 'php', 'fr');
 		$a->addTranslator(__DIR__ . '/lang', 'php', 'fr');
-		$this->assertEquals($a->_('I am the component %s', 'A'), 'Je suis le composant A');
-		$this->assertEquals($a->_('Hello world'), 'Bonjour monde');
-		$this->assertEquals($a->_('This is %s', 'an apple'), 'Ceci est une pomme');
-		$this->assertEquals($a->_('This is %s'), 'Ceci est %s');
-		$this->assertEquals($a->_('Number of %d max', 10), 'Nombre de 10 max');
-		$this->assertEquals(sprintf($a->_('Number of %d max'), 10), 'Nombre de 10 max');
+		$translate = self::getMethod('_');
+		$this->assertEquals($translate->invokeArgs($a, ['I am the component %s', 'A']), 'Je suis le composant A');
+		$this->assertEquals($translate->invokeArgs($a, ['Hello world']), 'Bonjour monde');
+		$this->assertEquals($translate->invokeArgs($a, ['This is %s', 'an apple']), 'Ceci est une pomme');
+		$this->assertEquals($translate->invokeArgs($a, ['This is %s']), 'Ceci est %s');
+		$this->assertEquals($translate->invokeArgs($a, ['Number of %d max', 10]), 'Nombre de 10 max');
+		$this->assertEquals(sprintf($translate->invokeArgs($a, ['Number of %d max']), 10), 'Nombre de 10 max');
 	}
 
 	public function testMultiTranslatorsOrder2() {
 		$a = new Component();
 		$a->addTranslator(__DIR__ . '/lang', 'php', 'fr');
 		$a->addTranslator(__DIR__ . '/lang/alt', 'php', 'fr');
-		$this->assertEquals($a->_('I am the component %s', 'A'), 'Je suis le composant A');
-		$this->assertEquals($a->_('Hello world'), 'Bonjour monde');
-		$this->assertEquals($a->_('This is %s', 'an apple'), "C'est une pomme");
-		$this->assertEquals($a->_('This is %s'), "C'est %s");
-		$this->assertEquals($a->_('Number of %d max', 10), 'Le nombre maximum est de 10');
-		$this->assertEquals(sprintf($a->_('Number of %d max'), 10), 'Le nombre maximum est de 10');
+		$translate = self::getMethod('_');
+		$this->assertEquals($translate->invokeArgs($a, ['I am the component %s', 'A']), 'Je suis le composant A');
+		$this->assertEquals($translate->invokeArgs($a, ['Hello world']), 'Bonjour monde');
+		$this->assertEquals($translate->invokeArgs($a, ['This is %s', 'an apple']), "C'est une pomme");
+		$this->assertEquals($translate->invokeArgs($a, ['This is %s']), "C'est %s");
+		$this->assertEquals($translate->invokeArgs($a, ['Number of %d max', 10]), 'Le nombre maximum est de 10');
+		$this->assertEquals(sprintf($translate->invokeArgs($a, ['Number of %d max']), 10), 'Le nombre maximum est de 10');
 	}
 
 	public function testMergeTranslators() {
@@ -265,11 +275,12 @@ class TranslatorTest extends TestCase {
 		$a->addTranslator(__DIR__ . '/lang', 'php', 'fr');
 		$b = new Component();
 		$a->setVar('SLOT', $b);
-		$this->assertEquals($b->_('Hello world'), 'Bonjour monde');
-		$this->assertEquals($b->_('This is %s', 'an apple'), 'Ceci est une pomme');
-		$this->assertEquals($b->_('This is %s'), 'Ceci est %s');
-		$this->assertEquals($b->_('Number of %d max', 10), 'Nombre de 10 max');
-		$this->assertEquals(sprintf($b->_('Number of %d max'), 10), 'Nombre de 10 max');
+		$translate = self::getMethod('_');
+		$this->assertEquals($translate->invokeArgs($b, ['Hello world']), 'Bonjour monde');
+		$this->assertEquals($translate->invokeArgs($b, ['This is %s', 'an apple']), 'Ceci est une pomme');
+		$this->assertEquals($translate->invokeArgs($b, ['This is %s']), 'Ceci est %s');
+		$this->assertEquals($translate->invokeArgs($b, ['Number of %d max', 10]), 'Nombre de 10 max');
+		$this->assertEquals(sprintf($translate->invokeArgs($b, ['Number of %d max']), 10), 'Nombre de 10 max');
 	}
 
 	public function testMergeTranslatorsOrder1() {
@@ -278,12 +289,13 @@ class TranslatorTest extends TestCase {
 		$b = new Component();
 		$a->setVar('SLOT', $b);
 		$b->addTranslator(__DIR__ . '/lang/alt', 'php', 'fr');
-		$this->assertEquals($b->_('I am the component %s', 'B'), 'Je suis le composant B');
-		$this->assertEquals($b->_('Hello world'), 'Bonjour monde');
-		$this->assertEquals($b->_('This is %s', 'an apple'), "C'est une pomme");
-		$this->assertEquals($b->_('This is %s'), "C'est %s");
-		$this->assertEquals($b->_('Number of %d max', 10), 'Le nombre maximum est de 10');
-		$this->assertEquals(sprintf($b->_('Number of %d max'), 10), 'Le nombre maximum est de 10');
+		$translate = self::getMethod('_');
+		$this->assertEquals($translate->invokeArgs($b, ['I am the component %s', 'B']), 'Je suis le composant B');
+		$this->assertEquals($translate->invokeArgs($b, ['Hello world']), 'Bonjour monde');
+		$this->assertEquals($translate->invokeArgs($b, ['This is %s', 'an apple']), "C'est une pomme");
+		$this->assertEquals($translate->invokeArgs($b, ['This is %s']), "C'est %s");
+		$this->assertEquals($translate->invokeArgs($b, ['Number of %d max', 10]), 'Le nombre maximum est de 10');
+		$this->assertEquals(sprintf($translate->invokeArgs($b, ['Number of %d max']), 10), 'Le nombre maximum est de 10');
 	}
 
 	public function testMergeTranslatorsOrder2() {
@@ -292,12 +304,13 @@ class TranslatorTest extends TestCase {
 		$b = new Component();
 		$b->addTranslator(__DIR__ . '/lang/alt', 'php', 'fr');
 		$a->setVar('SLOT', $b);
-		$this->assertEquals($b->_('I am the component %s', 'B'), 'Je suis le composant B');
-		$this->assertEquals($b->_('Hello world'), 'Bonjour monde');
-		$this->assertEquals($b->_('This is %s', 'an apple'), "C'est une pomme");
-		$this->assertEquals($b->_('This is %s'), "C'est %s");
-		$this->assertEquals($b->_('Number of %d max', 10), 'Le nombre maximum est de 10');
-		$this->assertEquals(sprintf($b->_('Number of %d max'), 10), 'Le nombre maximum est de 10');
+		$translate = self::getMethod('_');
+		$this->assertEquals($translate->invokeArgs($b, ['I am the component %s', 'B']), 'Je suis le composant B');
+		$this->assertEquals($translate->invokeArgs($b, ['Hello world']), 'Bonjour monde');
+		$this->assertEquals($translate->invokeArgs($b, ['This is %s', 'an apple']), "C'est une pomme");
+		$this->assertEquals($translate->invokeArgs($b, ['This is %s']), "C'est %s");
+		$this->assertEquals($translate->invokeArgs($b, ['Number of %d max', 10]), 'Le nombre maximum est de 10');
+		$this->assertEquals(sprintf($translate->invokeArgs($b, ['Number of %d max']), 10), 'Le nombre maximum est de 10');
 	}
 
 	public function testComposition0() {
