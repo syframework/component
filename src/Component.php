@@ -76,7 +76,7 @@ class Component {
 	 */
 	public static function concat(...$elements) {
 		$component = new Component();
-		$component->setTemplateContent('{' . implode('}{', array_keys($elements)) . '}');
+		$component->setTemplateContent('{' . implode("}\n{", array_keys($elements)) . '}');
 		foreach ($elements as $i => $element) {
 			$component->setVar($i, $element);
 		}
