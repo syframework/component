@@ -193,4 +193,13 @@ class ComponentTest extends TestCase {
 		$this->assertEquals('FooBarBazHello', $c->render());
 	}
 
+	public function testConcat() {
+		$a = new Component();
+		$a->setTemplateContent('<a>');
+		$b = new Component();
+		$b->setTemplateContent('<b>');
+		$this->assertEquals("<a>\n<b>", strval(Component::concat($a, $b)));
+		$this->assertEquals('', strval(Component::concat(...[])));
+	}
+
 }
