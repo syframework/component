@@ -72,9 +72,10 @@ class Component {
 	 * Concat components
 	 *
 	 * @param  string|Component ...$elements
-	 * @return Component
+	 * @return string|Component
 	 */
 	public static function concat(...$elements) {
+		if (empty($elements)) return '';
 		$component = new Component();
 		$component->setTemplateContent('{' . implode("}\n{", array_keys($elements)) . '}');
 		foreach ($elements as $i => $element) {
