@@ -69,22 +69,6 @@ class Component {
 	public function __construct() {}
 
 	/**
-	 * Concat components
-	 *
-	 * @param  string|Component ...$elements
-	 * @return string|Component
-	 */
-	public static function concat(...$elements) {
-		if (empty($elements)) return '';
-		$component = new Component();
-		$component->setTemplateContent('{' . implode("}\n{", array_keys($elements)) . '}');
-		foreach ($elements as $i => $element) {
-			$component->setVar($i, $element);
-		}
-		return $component;
-	}
-
-	/**
 	 * Return template type
 	 *
 	 * @return string
@@ -201,8 +185,11 @@ class Component {
 	 * @param array $vars Block variables, if empty use variables set in the component
 	 */
 	public function setBlock($block, array $vars = array()) {
-		foreach ($vars as $k => $v) {
-			if ($v instanceof Component) $v->setParent($this);
+		foreach ($vars as $v) {
+			if ($v instanceof Component) {
+				$v->addTranslators($this->getTranslators());
+				$v->setParent($this);
+			}
 		}
 		$this->blocks[][$block] = empty($vars) ? $this->vars : $vars;
 	}
@@ -358,6 +345,22 @@ class Component {
 		}
 		$this->render = $this->getTemplate()->getRender();
 		return $this->render;
+	}
+
+	/**
+	 * Concat components
+	 *
+	 * @param  string|Component ...$elements
+	 * @return string|Component
+	 */
+	public static function concat(...$elements) {
+		if (empty($elements)) return '';
+		$component = new Component();
+		$component->setTemplateContent('{' . implode("}\n{", array_keys($elements)) . '}');
+		foreach ($elements as $i => $element) {
+			$component->setVar($i, $element);
+		}
+		return $component;
 	}
 
 	/**
