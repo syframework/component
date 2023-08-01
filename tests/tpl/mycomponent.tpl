@@ -6,3 +6,7 @@
 {SLOT2}
 {SLOT3}
 {SLOT4}
+{"My question? Ok"}
+{"It's me"}
+{"Ok, good"}
+{"Full stop."}
