@@ -299,6 +299,8 @@ class Component {
 
 	/**
 	 * Return the component render
+	 *
+	 * @return string
 	 */
 	public function render() {
 		if (isset($this->render)) return $this->render;
