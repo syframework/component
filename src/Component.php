@@ -591,4 +591,42 @@ class Component {
 		return $this->render();
 	}
 
+	/**
+	 * Serialize a component by ignoring Closures
+	 *
+	 * @return array
+	 */
+	public function __serialize() {
+		$o = new \ReflectionObject($this);
+		$properties = $o->getProperties();
+		$data = array();
+
+		foreach ($properties as $property) {
+			$value = $property->getValue($this);
+			$name = $property->getName();
+			$type = gettype($value);
+			switch ($type) {
+				case 'NULL':
+				case 'unknown type':
+				case 'resource':
+					break;
+
+				case 'object':
+					if ($value instanceof Closure) break;
+					$data[$name] = serialize($value);
+					break;
+
+				case 'array':
+					$data[$name] = array_filter($value, function ($item) {
+						return !$item instanceof Closure;
+					});
+					break;
+
+				default:
+					$data[$name] = $value;
+			}
+		}
+		return $data;
+	}
+
 }
