@@ -138,6 +138,31 @@ class MyTestComponent extends Component {
 
 }
 
+class ComponentToSerialize extends Component {
+
+	public $entier;
+
+	protected $chaine;
+
+	private $vrai;
+
+	private $objet;
+
+	private $tableau;
+
+	private $vide;
+
+	public function __construct() {
+		$this->entier = 42;
+		$this->chaine = 'bonjour monde';
+		$this->vrai = true;
+		$this->objet = new MyTestComponent(30);
+		$this->tableau = array(23, 'jordan', true);
+		$this->vide = null;
+	}
+
+}
+
 class ComponentTest extends TestCase {
 
 	public function assertFileContentEqualsComponentRender(string $filename, Component $component) {
@@ -148,6 +173,35 @@ class ComponentTest extends TestCase {
 			return trim($code);
 		};
 		$this->assertEquals($minify(file_get_contents($filename)), $minify($component->render()));
+	}
+
+	public function testSetTemplateType() {
+		$c = new Component();
+		$c->setTemplateContent('<?php echo $SLOT ?>');
+		$c->setTemplateType('php');
+		$c->setVar('SLOT', 'hello world');
+		$this->assertEquals('php', $c->getTemplateType());
+	}
+
+	public function testSetTemplateFileNotFound() {
+		$c = new Component();
+		$c->setTemplateFile(__DIR__ . '/not_found.tpl');
+		$this->assertEquals('', strval($c));
+	}
+
+	public function testGetParent() {
+		$a = new Component();
+		$b = new Component();
+		$a->setComponent('SLOT', $b);
+		$this->assertEquals($a, $b->getParent());
+	}
+
+	public function testSetVarAppend() {
+		$a = new Component();
+		$a->setTemplateContent('{SLOT}');
+		$a->setVar('SLOT', 'hello');
+		$a->setVar('SLOT', 'world', true);
+		$this->assertEquals('helloworld', strval($a));
 	}
 
 	public function testSetBlock() {
@@ -200,6 +254,11 @@ class ComponentTest extends TestCase {
 		$b->setTemplateContent('<b>');
 		$this->assertEquals("<a>\n<b>", strval(Component::concat($a, $b)));
 		$this->assertEquals('', strval(Component::concat(...[])));
+	}
+
+	public function testSerialize() {
+		$c = new ComponentToSerialize();
+		$this->assertEquals('O:20:"ComponentToSerialize":5:{s:6:"entier";i:42;s:6:"chaine";s:13:"bonjour monde";s:4:"vrai";b:1;s:5:"objet";s:41:"O:15:"MyTestComponent":1:{s:2:"id";i:30;}";s:7:"tableau";a:3:{i:0;i:23;i:1;s:6:"jordan";i:2;b:1;}}', serialize($c));
 	}
 
 }

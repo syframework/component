@@ -289,6 +289,22 @@ class TranslatorTest extends TestCase {
 		$this->assertEquals(sprintf($translate->invokeArgs($a, ['Number of %d max']), 10), 'Nombre de 10 max');
 	}
 
+	public function testSetTranslators() {
+		$b = new Component();
+		$b->addTranslator(__DIR__ . '/lang/alt', 'php', 'fr');
+		$b->addTranslator(__DIR__ . '/lang', 'php', 'fr');
+
+		$a = new Component();
+		$a->setTranslators($b->getTranslators());
+		$translate = self::getMethod('_');
+		$this->assertEquals($translate->invokeArgs($a, ['I am the component %s', 'A']), 'Je suis le composant A');
+		$this->assertEquals($translate->invokeArgs($a, ['Hello world']), 'Bonjour monde');
+		$this->assertEquals($translate->invokeArgs($a, ['This is %s', 'an apple']), 'Ceci est une pomme');
+		$this->assertEquals($translate->invokeArgs($a, ['This is %s']), 'Ceci est %s');
+		$this->assertEquals($translate->invokeArgs($a, ['Number of %d max', 10]), 'Nombre de 10 max');
+		$this->assertEquals(sprintf($translate->invokeArgs($a, ['Number of %d max']), 10), 'Nombre de 10 max');
+	}
+
 	public function testMultiTranslatorsOrder1() {
 		$a = new Component();
 		$a->addTranslator(__DIR__ . '/lang/alt', 'php', 'fr');
