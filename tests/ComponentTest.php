@@ -8,7 +8,7 @@ class MyTestComponent extends Component {
 	/**
 	 * @var string
 	 */
-	private $id;
+	public $id;
 
 	/**
 	 * @param string $id
@@ -142,15 +142,15 @@ class ComponentToSerialize extends Component {
 
 	public $entier;
 
-	protected $chaine;
+	public $chaine;
 
-	private $vrai;
+	public $vrai;
 
-	private $objet;
+	public $objet;
 
-	private $tableau;
+	public $tableau;
 
-	private $vide;
+	public $vide;
 
 	public function __construct() {
 		$this->entier = 42;
@@ -258,7 +258,15 @@ class ComponentTest extends TestCase {
 
 	public function testSerialize() {
 		$c = new ComponentToSerialize();
-		$this->assertEquals('O:20:"ComponentToSerialize":5:{s:6:"entier";i:42;s:6:"chaine";s:13:"bonjour monde";s:4:"vrai";b:1;s:5:"objet";s:41:"O:15:"MyTestComponent":1:{s:2:"id";i:30;}";s:7:"tableau";a:3:{i:0;i:23;i:1;s:6:"jordan";i:2;b:1;}}', serialize($c));
+		$serialized = serialize($c);
+		$unserialized = unserialize($serialized);
+		$this->assertEquals('O:20:"ComponentToSerialize":6:{s:6:"entier";i:42;s:6:"chaine";s:13:"bonjour monde";s:4:"vrai";b:1;s:5:"objet";O:15:"MyTestComponent":1:{s:2:"id";i:30;}s:7:"tableau";a:3:{i:0;i:23;i:1;s:6:"jordan";i:2;b:1;}s:4:"vide";N;}', $serialized);
+		$this->assertEquals($c->entier, $unserialized->entier);
+		$this->assertEquals($c->chaine, $unserialized->chaine);
+		$this->assertEquals($c->vrai, $unserialized->vrai);
+		$this->assertEquals($c->objet->id, $unserialized->objet->id);
+		$this->assertEquals($c->tableau, $unserialized->tableau);
+		$this->assertEquals($c->vide, $unserialized->vide);
 	}
 
 }

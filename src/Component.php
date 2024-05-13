@@ -606,14 +606,13 @@ class Component {
 			$name = $property->getName();
 			$type = gettype($value);
 			switch ($type) {
-				case 'NULL':
 				case 'unknown type':
 				case 'resource':
 					break;
 
 				case 'object':
 					if ($value instanceof Closure) break;
-					$data[$name] = serialize($value);
+					$data[$name] = $value;
 					break;
 
 				case 'array':
