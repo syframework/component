@@ -597,34 +597,81 @@ class Component {
 	 * @return array
 	 */
 	public function __serialize() {
+		$serializeObject = function ($object) {
+			$o = new \ReflectionObject($object);
+			foreach ($o->getProperties() as $property) {
+				$value = $property->getValue($object);
+				$type = gettype($value);
+				switch ($type) {
+					case 'unknown type':
+					case 'resource':
+					case 'object':
+						$property->setValue($object, null);
+						break;
+
+					case 'array':
+						$property->setValue($object, array_filter($value, function ($i) {
+							return !is_object($i);
+						}));
+						break;
+				}
+			}
+			return $object;
+		};
+
+		$serializeArray = function ($array) use (&$serializeArray) {
+			return array_map(function ($item) use ($serializeArray) {
+				$type = gettype($item);
+				switch ($type) {
+					case 'unknown type':
+					case 'resource':
+					case 'object':
+						return null;
+
+					case 'array':
+						return $serializeArray($item);
+
+					default:
+						return $item;
+				}
+			}, $array);
+		};
+
 		$o = new \ReflectionObject($this);
-		$properties = $o->getProperties();
 		$data = array();
 
-		foreach ($properties as $property) {
-			$value = $property->getValue($this);
-			$name = $property->getName();
-			$type = gettype($value);
-			switch ($type) {
-				case 'unknown type':
-				case 'resource':
-					break;
+		do {
+			$properties = $o->getProperties();
+			foreach ($properties as $property) {
+				if ($property->isStatic()) continue;
 
-				case 'object':
-					if ($value instanceof Closure) break;
-					$data[$name] = $value;
-					break;
+				$name = $property->getName();
+				if ($property->isPrivate()) {
+					$name = "\0" . $property->getDeclaringClass()->getName() . "\0" . $name;
+				} elseif ($property->isProtected()) {
+					$name = "\0*\0" . $name;
+				}
 
-				case 'array':
-					$data[$name] = array_filter($value, function ($item) {
-						return !$item instanceof Closure;
-					});
-					break;
+				$value = $property->getValue($this);
+				$type = gettype($value);
+				switch ($type) {
+					case 'unknown type':
+					case 'resource':
+						break;
 
-				default:
-					$data[$name] = $value;
+					case 'object':
+						$data[$name] = $serializeObject($value);
+						break;
+
+					case 'array':
+						$data[$name] = $serializeArray($value);
+						break;
+
+					default:
+						$data[$name] = $value;
+				}
 			}
-		}
+		} while ($o = $o->getParentClass());
 		return $data;
 	}
 
