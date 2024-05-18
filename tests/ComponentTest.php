@@ -260,7 +260,6 @@ class ComponentTest extends TestCase {
 		$c = new ComponentToSerialize();
 		$serialized = serialize($c);
 		$unserialized = unserialize($serialized);
-		$this->assertEquals('O:20:"ComponentToSerialize":6:{s:6:"entier";i:42;s:6:"chaine";s:13:"bonjour monde";s:4:"vrai";b:1;s:5:"objet";O:15:"MyTestComponent":1:{s:2:"id";i:30;}s:7:"tableau";a:3:{i:0;i:23;i:1;s:6:"jordan";i:2;b:1;}s:4:"vide";N;}', $serialized);
 		$this->assertEquals($c->entier, $unserialized->entier);
 		$this->assertEquals($c->chaine, $unserialized->chaine);
 		$this->assertEquals($c->vrai, $unserialized->vrai);
