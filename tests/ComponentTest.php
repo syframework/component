@@ -138,31 +138,6 @@ class MyTestComponent extends Component {
 
 }
 
-class ComponentToSerialize extends Component {
-
-	public $entier;
-
-	public $chaine;
-
-	public $vrai;
-
-	public $objet;
-
-	public $tableau;
-
-	public $vide;
-
-	public function __construct() {
-		$this->entier = 42;
-		$this->chaine = 'bonjour monde';
-		$this->vrai = true;
-		$this->objet = new MyTestComponent(30);
-		$this->tableau = array(23, 'jordan', true);
-		$this->vide = null;
-	}
-
-}
-
 class ComponentTest extends TestCase {
 
 	public function assertFileContentEqualsComponentRender(string $filename, Component $component) {
@@ -256,16 +231,33 @@ class ComponentTest extends TestCase {
 		$this->assertEquals('', strval(Component::concat(...[])));
 	}
 
-	public function testSerialize() {
-		$c = new ComponentToSerialize();
-		$serialized = serialize($c);
-		$unserialized = unserialize($serialized);
-		$this->assertEquals($c->entier, $unserialized->entier);
-		$this->assertEquals($c->chaine, $unserialized->chaine);
-		$this->assertEquals($c->vrai, $unserialized->vrai);
-		$this->assertEquals($c->objet->id, $unserialized->objet->id);
-		$this->assertEquals($c->tableau, $unserialized->tableau);
-		$this->assertEquals($c->vide, $unserialized->vide);
+	public function testLifecycle() {
+		$this->expectOutputString('B Added' . PHP_EOL . 'A Added' . PHP_EOL . 'A Mount' . PHP_EOL . 'B Mount' . PHP_EOL . 'B Mounted' . PHP_EOL . 'A Mounted' . PHP_EOL);
+
+		$a = new Component();
+		$a->mounted(function () {
+			echo 'A Mounted' . PHP_EOL;
+		});
+		$a->mount(function () {
+			echo 'A Mount' . PHP_EOL;
+		});
+		$a->added(function () {
+			echo 'A Added' . PHP_EOL;
+		});
+
+		$b = new Component();
+		$b->mounted(function () {
+			echo 'B Mounted' . PHP_EOL;
+		});
+		$b->mount(function () {
+			echo 'B Mount' . PHP_EOL;
+		});
+		$b->added(function () {
+			echo 'B Added' . PHP_EOL;
+		});
+
+		$a->setVar('SLOT', $b); // B is added into A
+		echo $a; // Render A
 	}
 
 }

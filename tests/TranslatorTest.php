@@ -251,6 +251,51 @@ class C4 extends Component {
 }
 #endregion
 
+#region Composition 5
+class A5 extends Component {
+
+	public function __construct() {
+		$this->addTranslator(__DIR__ . '/lang', 'php', 'fr');
+		$this->setTemplateContent('<!-- BEGIN BLOCK --><a>{HELLO/} {"world"} {B}</a><!-- END BLOCK -->');
+		$this->mount(function () {
+			$this->setBlock('BLOCK', [
+				'HELLO' => $this->_('hello'),
+				'B' => new B4(),
+			]);
+		});
+	}
+
+}
+
+class B5 extends Component {
+
+	public function __construct() {
+		$this->setTemplateContent('<b>{HELLO/} {"world"} {C}</b>');
+		$this->mount(function () {
+			$this->setVars([
+				'HELLO' => $this->_('hello'),
+				'C' => new C4(),
+			]);
+		});
+	}
+
+}
+
+class C5 extends Component {
+
+	public function __construct() {
+		$this->addTranslator(__DIR__ . '/lang/alt', 'php', 'fr');
+		$this->setTemplateContent('<c>{HELLO/} {"world"}</c>');
+		$this->mount(function () {
+			$this->setVars([
+				'HELLO' => $this->_('hello'),
+			]);
+		});
+	}
+
+}
+#endregion
+
 class MyComponent extends Component {
 
 	public function __construct() {
@@ -396,6 +441,11 @@ class TranslatorTest extends TestCase {
 
 	public function testComposition4() {
 		$a = new A4();
+		$this->assertEquals('<a>bonjour monde <b>bonjour monde <c>salut monde</c></b></a>', $a->render());
+	}
+
+	public function testComposition5() {
+		$a = new A5();
 		$this->assertEquals('<a>bonjour monde <b>bonjour monde <c>salut monde</c></b></a>', $a->render());
 	}
 

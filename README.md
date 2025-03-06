@@ -393,9 +393,10 @@ use Sy\Component;
 class A extends Component {
 
 	public function __construct() {
+		$this->addTranslator(__DIR__ . '/lang', 'php', 'fr');
+		$this->setTemplateContent('<a>{HELLO/} {"world"} {B}</a>');
+
 		$this->mount(function () {
-			$this->addTranslator(__DIR__ . '/lang', 'php', 'fr');
-			$this->setTemplateContent('<a>{HELLO/} {"world"} {B}</a>');
 			$this->setVars([
 				'HELLO' => $this->_('hello'),
 				'B' => new B()
@@ -408,8 +409,9 @@ class A extends Component {
 class B extends Component {
 
 	public function __construct() {
+		$this->setTemplateContent('<b>{HELLO/} {"world"} {C}</b>');
+
 		$this->mount(function () {
-			$this->setTemplateContent('<b>{HELLO/} {"world"} {C}</b>');
 			$this->setVars([
 				'HELLO' => $this->_('hello'),
 				'C' => new C()
@@ -422,9 +424,10 @@ class B extends Component {
 class C extends Component {
 
 	public function __construct() {
+		$this->addTranslator(__DIR__ . '/lang/alt', 'php', 'fr');
+		$this->setTemplateContent('<c>{HELLO/} {"world"}</c>');
+
 		$this->mount(function () {
-			$this->addTranslator(__DIR__ . '/lang/alt', 'php', 'fr');
-			$this->setTemplateContent('<c>{HELLO/} {"world"}</c>');
 			$this->setVars([
 				'HELLO' => $this->_('hello'),
 			]);
@@ -458,4 +461,6 @@ Output result:
 
 The translator of A is transmitted to B and C. C will use his own translator in priority.
 
-We need to use the **mount** method here to register callbacks on the mount event triggered just before the rendering stage. This is because we need to ensure that all the leaf components received the translators from their parents components.
+The translation method (underscore) must be called during the **mount** stage. Please see the [component lifecyle](https://github.com/syframework/component/wiki/Component-lifecycle) to know more about every events triggered during a component's rendering.
+
+We need to use the **mount** method here to register callbacks. Theses callbacks are called on the mount event. This is because we need to ensure that all the leaf components received the translators from their parents components.
