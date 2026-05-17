@@ -4,7 +4,7 @@
 	"type": "library",
 	"require": {
 		"php": ">=5.6.0",
-		"sy/template": "^2",
+		"sy/template": "^3",
 		"sy/http": "^1",
 		"sy/debug": "^1",
 		"sy/translate": "^1.0"
