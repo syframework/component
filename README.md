@@ -114,8 +114,6 @@ FooBarBazHello
 class A extends Sy\Component {
 
 	public function __construct() {
-		parent::__construct();
-
 		$this->setTemplateFile(__DIR__ . '/template.html');
 
 		// setBlocks will set a block for each line in the data array
@@ -244,6 +242,57 @@ $hello = new Hello('toto');
 echo $hello;
 ```
 
+### Constructor and `mount`
+
+`Sy\Component::__construct()` is intentionally empty. A subclass does not need to call
+`parent::__construct()`: the call is only kept working for backward compatibility with
+legacy code. Template creation is lazy (see `getTemplate()`), so an empty constructor is
+harmless. If an intermediate class of your own hierarchy later defines a real
+constructor, it becomes responsible for the same compatibility.
+
+The constructor is meant for **static wiring**: template, translators, CSS/JS links and
+hook registration. Context-free scalar values may also be set there. Anything that
+evaluates translations, depends on the parent context, or creates child components
+should be deferred to the **mount** stage:
+
+- translators are copied from the parent onto a child **at attach time** (`setVar()` /
+  `setBlock()`), so a translation evaluated in a constructor can run before the parent
+  translators reach the component;
+- a child component created in a constructor is attached before its parent has finished
+  its own constructor, and may miss translators registered later.
+
+```php
+<?php
+
+use Sy\Component;
+
+class MyComponent extends Component {
+
+	public function __construct() {
+		// Static wiring: safe in the constructor
+		$this->setTemplateFile(__DIR__ . '/mycomponent.tpl');
+		$this->addTranslator(__DIR__ . '/lang');
+
+		// Content, translations and child components: deferred to the mount stage
+		$this->mount(function () {
+			$this->init();
+		});
+	}
+
+	private function init() {
+		$this->setVars([
+			'HELLO' => $this->_('hello'),
+			'CHILD' => new MyChildComponent(),
+		]);
+	}
+
+}
+```
+
+See the [Component lifecycle](https://github.com/syframework/component/wiki/Component-lifecycle)
+wiki page for the exact hook ordering and for the cases where configuration is silently
+ignored (for example `setVar` after the first render).
+
 ## Add a component in another one
 
 Use **setVar** method to add a component in another one.
@@ -274,7 +323,6 @@ use Sy\Component;
 class MyComponent extends Component {
 
 	public function  __construct() {
-		parent::__construct();
 		$this->setTemplateFile(__DIR__ . '/MyComponent.tpl');
 
 		// if $_REQUEST['action'] is not set, call initAction
@@ -323,17 +371,20 @@ use Sy\Component;
 class MyComponent extends Component {
 
 	public function __construct() {
-		parent::__construct();
 		$this->setTemplateFile(__DIR__ . '/tpl/mycomponent.tpl');
 
 		// Add a translator, it will look for translation file into specified directory
 		$this->addTranslator(__DIR__ . '/lang', 'php', 'fr');
 
-		// Use translation method
-		$this->setVar('SLOT1', $this->_('Hello world'));
-		$this->setVar('SLOT2', $this->_('This is %s', 'an apple'));
-		$this->setVar('SLOT3', $this->_('This is %s', 'an pineapple'));
-		$this->setVar('SLOT4', $this->_('Number of %d max', 10));
+		// Translations must be evaluated during the mount stage
+		$this->mount(function () {
+			$this->setVars([
+				'SLOT1' => $this->_('Hello world'),
+				'SLOT2' => $this->_('This is %s', 'an apple'),
+				'SLOT3' => $this->_('This is %s', 'an pineapple'),
+				'SLOT4' => $this->_('Number of %d max', 10),
+			]);
+		});
 	}
 
 }
